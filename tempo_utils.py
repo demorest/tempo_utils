@@ -173,11 +173,13 @@ class toalist(list):
     def get_flag(self,flag,f=lambda x: x):
         return numpy.array([f(t.flags[flag]) for t in self if t.is_toa()])
 
-def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True):
+def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
+        emax=0.0):
     """Read the given filename and return a list of toa objects 
     parsed from it.  Will recurse to process INCLUDE-d files unless
     process_includes is set to False.  top is used internally for
-    processing INCLUDEs and should always be set to True."""
+    processing INCLUDEs and should always be set to True.  EMAX
+    statements are applied here as well (could make this optional)."""
     # Change to directory where top-level file is in order to process 
     # relative include paths correctly.  This might break if there
     # are multiple levels of include...
@@ -201,11 +203,14 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True):
                     skip = False
                     continue
                 if skip: continue
+                if newtoa.command=="EMAX":
+                    emax = float(newtoa.arg)
+                    continue
                 if newtoa.command=="INFO":
                     read_toa_file.info = newtoa.arg
                 if newtoa.command=="INCLUDE" and process_includes:
                     toas += read_toa_file(newtoa.arg,
-                            ignore_blanks=ignore_blanks,top=False)
+                            ignore_blanks=ignore_blanks,top=False,emax=emax)
                 else:
                     toas += [newtoa]
             elif skip:
@@ -215,7 +220,10 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True):
                     toas += [newtoa]
             else:
                 newtoa.info = read_toa_file.info
-                toas += [newtoa]
+                if emax>0.0 and newtoa.error>emax:
+                    pass
+                else:
+                    toas += [newtoa]
         f.close()
         if top and (orig_dir is not None):
             os.chdir(orig_dir)
