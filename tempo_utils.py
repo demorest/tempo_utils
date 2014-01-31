@@ -172,6 +172,9 @@ class toalist(list):
         return numpy.array([t.error for t in self if t.is_toa()])
     def get_flag(self,flag,f=lambda x: x):
         return numpy.array([f(t.flags[flag]) for t in self if t.is_toa()])
+    def get_chi2(self):
+        x = self.get_resids()/self.get_err()
+        return (x**2).sum()
 
 def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
         emax=0.0):
@@ -287,7 +290,7 @@ def toa_resid_match(toas, resids):
         toa.res = resids.pop(0)
 
 import os, tempfile
-def run_tempo(toas, parfile):
+def run_tempo(toas, parfile, show_output=False):
     """Run tempo on the given TOA list using the given parfile.  Residuals
     are read and filled into the toa structs on successful completion."""
     orig_dir = os.getcwd()
@@ -296,7 +299,10 @@ def run_tempo(toas, parfile):
         os.system("cp %s %s/pulsar.par" % (parfile, temp_dir))
         os.chdir(temp_dir)
         write_toa_file("pulsar.toa", toas)
-        os.system("tempo -f pulsar.par pulsar.toa")
+        cmd = "tempo -f pulsar.par pulsar.toa"
+        if show_output==False:
+            cmd += " > /dev/null"
+        os.system(cmd)
         resids = read_resid2_file()
         toa_resid_match(toas, resids)
     finally:
