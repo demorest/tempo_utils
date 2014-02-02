@@ -173,6 +173,7 @@ class toalist(list):
     def get_flag(self,flag,f=lambda x: x):
         return numpy.array([f(t.flags[flag]) for t in self if t.is_toa()])
     def get_chi2(self):
+        # NOTE: this will not take EQUAD/EFAC/etc into account
         x = self.get_resids()/self.get_err()
         return (x**2).sum()
 
@@ -305,7 +306,10 @@ def run_tempo(toas, parfile, show_output=False):
         os.system(cmd)
         resids = read_resid2_file()
         toa_resid_match(toas, resids)
+        lis = open("tempo.lis",'r').readlines()
+        chi2 = float(lis[-1][14:23])
     finally:
         os.chdir(orig_dir)
     os.system("rm -rf %s" % temp_dir)
+    return chi2
 
