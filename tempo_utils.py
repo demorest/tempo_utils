@@ -5,7 +5,7 @@ import numpy
 toa_commands = ("DITHER", "EFAC", "EMAX", "EMAP", "EMIN", "EQUAD", "FMAX",
         "FMIN", "INCLUDE", "INFO", "JUMP", "MODE", "NOSKIP", "PHA1", "PHA2", 
         "PHASE", "SEARCH", "SIGMA", "SIM", "SKIP", "TIME", "TRACK", "ZAWGT",
-        "FORMAT")
+        "FORMAT", "EFLOOR")
 
 def toa_format(line):
     """Identifies a TOA line as one of the following types:  Comment, Command,
