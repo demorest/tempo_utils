@@ -308,8 +308,10 @@ def run_tempo(toas, parfile, show_output=False):
         toa_resid_match(toas, resids)
         lis = open("tempo.lis",'r').readlines()
         chi2 = float(lis[-1][14:23])
+        ndof = float(lis[-1][24:30])
+        rms = float((lis[-2].split())[4])
     finally:
         os.chdir(orig_dir)
     os.system("rm -rf %s" % temp_dir)
-    return chi2
+    return (chi2,ndof,rms)
 
