@@ -291,12 +291,16 @@ def toa_resid_match(toas, resids):
         toa.res = resids.pop(0)
 
 import os, tempfile
-def run_tempo(toas, parfile, show_output=False):
+def run_tempo(toas, parfile, show_output=False, get_output_par=False):
     """Run tempo on the given TOA list using the given parfile.  Residuals
     are read and filled into the toa structs on successful completion."""
     orig_dir = os.getcwd()
     try:
         temp_dir = tempfile.mkdtemp(prefix="tempo")
+        psrname = None
+        for l in open(parfile).readlines():
+            if l.startswith('PSR'):
+                psrname = l.split()[1]
         os.system("cp %s %s/pulsar.par" % (parfile, temp_dir))
         os.chdir(temp_dir)
         write_toa_file("pulsar.toa", toas)
@@ -310,8 +314,17 @@ def run_tempo(toas, parfile, show_output=False):
         chi2 = float(lis[-1][14:23])
         ndof = float(lis[-1][24:30])
         rms = float((lis[-2].split())[4])
+        # Capture output par file if needed
+        if get_output_par:
+            if psrname is not None:
+                outparlines = open('%s.par' % psrname).readlines()
+            else:
+                outparlines = None
     finally:
         os.chdir(orig_dir)
     os.system("rm -rf %s" % temp_dir)
-    return (chi2,ndof,rms)
+    if get_output_par:
+        return (chi2,ndof,rms,outparlines)
+    else:
+        return (chi2,ndof,rms)
 
