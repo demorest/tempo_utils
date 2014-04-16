@@ -164,6 +164,8 @@ class toalist(list):
             return numpy.array([t.res.res_us for t in self if t.is_toa()])
         elif units=='phase':
             return numpy.array([t.res.res_phase for t in self if t.is_toa()])
+    def get_resid_err(self):
+        return numpy.array([t.res.err_us for t in self if t.is_toa()])
     def get_freq(self):
         return numpy.array([t.freq for t in self if t.is_toa()])
     def get_mjd(self):
@@ -174,8 +176,18 @@ class toalist(list):
         return numpy.array([f(t.flags[flag]) for t in self if t.is_toa()])
     def get_chi2(self):
         # NOTE: this will not take EQUAD/EFAC/etc into account
-        x = self.get_resids()/self.get_err()
+        #x = self.get_resids()/self.get_err()
+        # This should:
+        x = self.get_resids()/self.get_resid_err()
         return (x**2).sum()
+    def get_group_chi2(self,flag,flagval,reduced=False):
+        r = numpy.array([t.res.res_us for t in self if t.is_toa() and t.flags[flag]==flagval])
+        e = numpy.array([t.res.err_us for t in self if t.is_toa() and t.flags[flag]==flagval])
+        x = r / e
+        if reduced:
+            return (x**2).mean()
+        else:
+            return (x**2).sum()
 
 def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
         emax=0.0):
@@ -298,10 +310,15 @@ def run_tempo(toas, parfile, show_output=False, get_output_par=False):
     try:
         temp_dir = tempfile.mkdtemp(prefix="tempo")
         psrname = None
-        for l in open(parfile).readlines():
+        try: 
+            lines = open(parfile,'r').readlines()
+        except:
+            lines = parfile
+        for l in lines:
             if l.startswith('PSR'):
                 psrname = l.split()[1]
-        os.system("cp %s %s/pulsar.par" % (parfile, temp_dir))
+        #os.system("cp %s %s/pulsar.par" % (parfile, temp_dir))
+        open("%s/pulsar.par" % temp_dir,'w').writelines(lines)
         os.chdir(temp_dir)
         write_toa_file("pulsar.toa", toas)
         cmd = "tempo -f pulsar.par pulsar.toa"
