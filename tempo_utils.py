@@ -324,7 +324,17 @@ def run_tempo(toas, parfile, show_output=False, get_output_par=False):
         #os.system("cp %s %s/pulsar.par" % (parfile, temp_dir))
         open("%s/pulsar.par" % temp_dir,'w').writelines(lines)
         os.chdir(temp_dir)
-        write_toa_file("pulsar.toa", toas)
+        extra_cmds = toalist([])
+        # Always add mode 1 if it's not there
+        if not any([t.command=='MODE' for t in toas]):
+            print "tempo_utils.run_tempo: Adding 'MODE 1'"
+            extra_cmds.insert(0,toa('MODE 1'))
+        # Check if there are tempo2 TOAs but no FORMAT line
+        if any([t.format=='Tempo2' for t in toas]) \
+                and not any([t.command=='FORMAT' for t in toas]):
+            print "tempo_utils.run_tempo: Adding 'FORMAT 1'"
+            extra_cmds.insert(0,toa('FORMAT 1'))
+        write_toa_file("pulsar.toa", extra_cmds + toas)
         cmd = "tempo -f pulsar.par pulsar.toa"
         if show_output==False:
             cmd += " > /dev/null"
