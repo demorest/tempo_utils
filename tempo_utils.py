@@ -180,9 +180,13 @@ class toalist(list):
         # This should:
         x = self.get_resids()/self.get_resid_err()
         return (x**2).sum()
-    def get_group_chi2(self,flag,flagval,reduced=False):
+    def get_group_chi2(self,flag,flagval,reduced=False,remove_mean=False):
         r = numpy.array([t.res.res_us for t in self if t.is_toa() and t.flags[flag]==flagval])
         e = numpy.array([t.res.err_us for t in self if t.is_toa() and t.flags[flag]==flagval])
+        if remove_mean:
+            w = 1.0/(e*e)
+            rm = (r*w).sum() / w.sum()
+            r = r - rm
         x = r / e
         if reduced:
             return (x**2).mean()
