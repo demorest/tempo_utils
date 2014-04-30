@@ -94,17 +94,29 @@ class toa:
                 "TOA format '%s' not implemented yet" % self.format
 
     def is_toa(self):
+        """Return True if this is a valid TOA (ie not command/comment/etc)"""
         if self.format in ("Tempo2", "Princeton", "Parkes", "ITOA"):
             return True
         else:
             return False
 
     def flag(self,flagname):
+        """Return the value of the flag, or None if flag not present."""
         try:
             rv = self.flags[flagname]
         except KeyError:
             rv = None
         return rv
+
+    def comment(self):
+        """Comment out this TOA line."""
+        if self.format != 'Comment':
+            self.__init__('C ' + self.line)
+
+    def uncomment(self):
+        """Uncomment this TOA line."""
+        if self.format == 'Comment':
+            self.__init__(self.line.lstrip('C# '))
 
 class residual:
     def __init__(self,raw=None):
