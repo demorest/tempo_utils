@@ -99,6 +99,13 @@ class toa:
         else:
             return False
 
+    def flag(self,flagname):
+        try:
+            rv = self.flags[flagname]
+        except KeyError:
+            rv = None
+        return rv
+
 class residual:
     def __init__(self,raw=None):
         self.mjd_bary = None
