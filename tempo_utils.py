@@ -78,7 +78,7 @@ class toa:
         elif self.format=="Tempo2":
             # This could use more error catching...
             fields = self.line.split()
-            self.name = fields.pop(0)
+            self.fname = fields.pop(0)
             self.freq = float(fields.pop(0))
             mjdstr = fields.pop(0)
             self.mjd = float(mjdstr)
