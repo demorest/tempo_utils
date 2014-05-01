@@ -213,12 +213,13 @@ class toalist(list):
             return (x**2).sum()
 
 def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
-        emax=0.0):
+        emax=0.0, ignore_EMAX=False):
     """Read the given filename and return a list of toa objects 
     parsed from it.  Will recurse to process INCLUDE-d files unless
     process_includes is set to False.  top is used internally for
-    processing INCLUDEs and should always be set to True.  EMAX
-    statements are applied here as well (could make this optional)."""
+    processing INCLUDEs and should always be set to True.  TOAs that are not
+    marked by an in-file EMAX are filtered by emax > 0.0.  ignore_EMAX
+    disables all in-file EMAXs."""
     # Change to directory where top-level file is in order to process 
     # relative include paths correctly.  This might break if there
     # are multiple levels of include...
@@ -242,14 +243,15 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
                     skip = False
                     continue
                 if skip: continue
-                if newtoa.command=="EMAX":
+                if newtoa.command=="EMAX" and not ignore_EMAX:
                     emax = float(newtoa.arg)
                     continue
                 if newtoa.command=="INFO":
                     read_toa_file.info = newtoa.arg
                 if newtoa.command=="INCLUDE" and process_includes:
                     toas += read_toa_file(newtoa.arg,
-                            ignore_blanks=ignore_blanks,top=False,emax=emax)
+                            ignore_blanks=ignore_blanks,top=False,emax=emax,
+                            ignore_EMAX=ignore_EMAX)
                 else:
                     toas += [newtoa]
             elif skip:
