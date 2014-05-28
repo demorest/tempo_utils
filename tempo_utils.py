@@ -23,7 +23,7 @@ def toa_format(line):
             return "Princeton"
         elif re.match("\S\S",line) and line[14]=='.':
             return "ITOA"
-        elif re.match("  ",line) and line[41]=='.':
+        elif re.match(" ",line) and line[41]=='.':
             return "Parkes"
         else:
             return "Unknown"
@@ -75,6 +75,14 @@ class toa:
                 self.ddm = float(self.line[68:78])
             except:
                 self.ddm = 0.0
+        elif self.format=="Parkes":
+            self.freq = float(self.line[25:34])
+            self.mjd = float(self.line[34:55])
+            self.imjd = int(self.mjd)
+            self.fmjd = float(self.line[41:55])
+            # TODO phase offset
+            self.error = float(self.line[63:71])
+            self.site = self.line[79]
         elif self.format=="Tempo2":
             # This could use more error catching...
             fields = self.line.split()
@@ -89,7 +97,7 @@ class toa:
             # All the rest should be flags
             for i in range(0,len(fields),2):
                 self.flags[fields[i].lstrip('-')] = fields[i+1]
-        elif self.format=="Parkes" or self.format=="ITOA":
+        elif self.format=="ITOA":
             raise RuntimeError, \
                 "TOA format '%s' not implemented yet" % self.format
 
@@ -365,7 +373,7 @@ def run_tempo(toas, parfile, show_output=False, get_output_par=False):
         lis = open("tempo.lis",'r').readlines()
         chi2 = float(lis[-1][14:23])
         ndof = float(lis[-1][24:30])
-        rms = float((lis[-2].split())[4])
+        rms = float(lis[-2][63:74])
         # Capture output par file if needed
         if get_output_par:
             if psrname is not None:
