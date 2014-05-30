@@ -336,7 +336,8 @@ def toa_resid_match(toas, resids):
         toa.res = resids.pop(0)
 
 import os, tempfile
-def run_tempo(toas, parfile, show_output=False, get_output_par=False):
+def run_tempo(toas, parfile, show_output=False, 
+        get_output_par=False, gls=False):
     """Run tempo on the given TOA list using the given parfile.  Residuals
     are read and filled into the toa structs on successful completion."""
     orig_dir = os.getcwd()
@@ -364,7 +365,9 @@ def run_tempo(toas, parfile, show_output=False, get_output_par=False):
             print "tempo_utils.run_tempo: Adding 'FORMAT 1'"
             extra_cmds.insert(0,toa('FORMAT 1'))
         write_toa_file("pulsar.toa", extra_cmds + toas)
-        cmd = "tempo -f pulsar.par pulsar.toa"
+        tempo_args = ""
+        if gls: tempo_args += " -G"
+        cmd = "tempo " + tempo_args + " -f pulsar.par pulsar.toa"
         if show_output==False:
             cmd += " > /dev/null"
         os.system(cmd)
