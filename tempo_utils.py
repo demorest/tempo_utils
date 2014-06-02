@@ -108,6 +108,16 @@ class toa:
         else:
             return False
 
+    def is_commented_toa(self):
+        """Return True if this is a commented out TOA line"""
+        if self.format == "Comment": 
+            try:
+                return toa(self.line.lstrip('C# ')).is_toa()
+            except:
+                return False
+        else:
+            return False
+
     def flag(self,flagname):
         """Return the value of the flag, or None if flag not present."""
         try:
@@ -186,8 +196,10 @@ def read_resid2_file(filename="resid2.tmp"):
     return resids
 
 class toalist(list):
-    def get_ntoa(self):
-        return sum(t.is_toa() for t in self)
+    def get_ntoa(self,commented=False):
+        ntoa = sum(t.is_toa() for t in self)
+        if commented: ntoa += sum(t.is_commented_toa() for t in self)
+        return ntoa
     def get_resids(self,units='us'):
         if units=='us':
             return numpy.array([t.res.res_us for t in self if t.is_toa()])
