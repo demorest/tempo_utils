@@ -186,6 +186,8 @@ def read_resid2_file(filename="resid2.tmp"):
     return resids
 
 class toalist(list):
+    def get_ntoa(self):
+        return sum(t.is_toa() for t in self)
     def get_resids(self,units='us'):
         if units=='us':
             return numpy.array([t.res.res_us for t in self if t.is_toa()])
