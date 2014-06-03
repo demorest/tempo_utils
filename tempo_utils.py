@@ -235,7 +235,7 @@ class toalist(list):
             return (x**2).sum()
 
 def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
-        emax=0.0, ignore_EMAX=False):
+        emax=0.0, ignore_EMAX=False, process_skips=True):
     """Read the given filename and return a list of toa objects 
     parsed from it.  Will recurse to process INCLUDE-d files unless
     process_includes is set to False.  top is used internally for
@@ -259,9 +259,9 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
         for l in f.readlines():
             newtoa = toa(l)
             if newtoa.format=="Command":
-                if newtoa.command=="SKIP":
+                if newtoa.command=="SKIP" and process_skips:
                     skip = True
-                elif newtoa.command=="NOSKIP":
+                elif newtoa.command=="NOSKIP" and process_skips:
                     skip = False
                     continue
                 if skip: continue
@@ -273,7 +273,8 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
                 if newtoa.command=="INCLUDE" and process_includes:
                     toas += read_toa_file(newtoa.arg,
                             ignore_blanks=ignore_blanks,top=False,emax=emax,
-                            ignore_EMAX=ignore_EMAX)
+                            ignore_EMAX=ignore_EMAX,
+                            process_skips=process_skips)
                 else:
                     toas += [newtoa]
             elif skip:
