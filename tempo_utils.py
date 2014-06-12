@@ -196,6 +196,16 @@ def read_resid2_file(filename="resid2.tmp"):
     return resids
 
 class toalist(list):
+
+    def write(self, filename, append=False):
+        if append:
+            f = open(filename, "a")
+        else:
+            f = open(filename, "w")
+        for t in self:
+            f.write(t.line + '\n')
+        f.close()
+
     def get_ntoa(self,commented=False):
         ntoa = sum(t.is_toa() for t in self)
         if commented: ntoa += sum(t.is_commented_toa() for t in self)
@@ -314,13 +324,7 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
         raise
 
 def write_toa_file(filename, toas, append=False):
-    if append:
-        f = open(filename, "a")
-    else:
-        f = open(filename, "w")
-    for t in toas:
-        f.write(t.line + '\n')
-    f.close()
+    toas.write(filename,append=append)
 
 def toa_match(toa1, toa2, freq_tol=0.1, time_tol=0.001):
     """Return true if two toa objects match within the given tolerances.
