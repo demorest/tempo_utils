@@ -235,13 +235,25 @@ class toalist(list):
             return (x**2).sum()
 
 def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
-        emax=0.0, ignore_EMAX=False, process_skips=True):
+        emax=0.0, ignore_EMAX=False, process_skips=True, convert_skips=False):
     """Read the given filename and return a list of toa objects 
-    parsed from it.  Will recurse to process INCLUDE-d files unless
-    process_includes is set to False.  top is used internally for
-    processing INCLUDEs and should always be set to True.  TOAs that are not
-    marked by an in-file EMAX are filtered by emax > 0.0.  ignore_EMAX
-    disables all in-file EMAXs."""
+    parsed from it.   Options:
+
+        process_includes: if True, read TOA lines from any INCLUDED files.
+
+        ignore_blanks: if True, blank TOA lines are ignored.
+
+        top: Used internally for recursion, do not use this.
+
+        emax: Set to apply a certain EMAX value.
+
+        ignore_EMAX: if True, EMAX statements are not applied (default is
+          to apply the EMAX filter as TOAs are read in).
+
+        process_skips: if True, SKIP'd sections are not read in.
+
+        convert_skips: if True, SKIP'd lines are converted to comments.
+    """
     # Change to directory where top-level file is in order to process 
     # relative include paths correctly.  This might break if there
     # are multiple levels of include...
@@ -264,7 +276,9 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
                 elif newtoa.command=="NOSKIP" and process_skips:
                     skip = False
                     continue
-                if skip: continue
+                if skip: 
+                    if convert_skips: newtoa.comment()
+                    else: continue
                 if newtoa.command=="EMAX" and not ignore_EMAX:
                     emax = float(newtoa.arg)
                     continue
@@ -278,7 +292,8 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
                 else:
                     toas += [newtoa]
             elif skip:
-                continue
+                if convert_skips: newtoa.comment()
+                else: continue
             elif newtoa.format in ("Blank", "Unknown"):
                 if not ignore_blanks:
                     toas += [newtoa]
