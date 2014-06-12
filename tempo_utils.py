@@ -235,7 +235,7 @@ class toalist(list):
             return (x**2).sum()
 
 def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
-        emax=0.0, ignore_EMAX=False, process_skips=True, convert_skips=False):
+        emax=0.0, process_emax=True, process_skips=True, convert_skips=False):
     """Read the given filename and return a list of toa objects 
     parsed from it.   Options:
 
@@ -245,10 +245,9 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
 
         top: Used internally for recursion, do not use this.
 
-        emax: Set to apply a certain EMAX value.
+        emax: Set to apply a certain EMAX value as TOAs are read.
 
-        ignore_EMAX: if True, EMAX statements are not applied (default is
-          to apply the EMAX filter as TOAs are read in).
+        process_emax: if True, EMAX statements are applied as TOAs are read.
 
         process_skips: if True, SKIP'd sections are not read in.
 
@@ -279,7 +278,7 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
                 if skip: 
                     if convert_skips: newtoa.comment()
                     else: continue
-                if newtoa.command=="EMAX" and not ignore_EMAX:
+                if newtoa.command=="EMAX" and process_emax:
                     emax = float(newtoa.arg)
                     continue
                 if newtoa.command=="INFO":
@@ -287,7 +286,7 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
                 if newtoa.command=="INCLUDE" and process_includes:
                     toas += read_toa_file(newtoa.arg,
                             ignore_blanks=ignore_blanks,top=False,emax=emax,
-                            ignore_EMAX=ignore_EMAX,
+                            process_emax=process_emax,
                             process_skips=process_skips)
                 else:
                     toas += [newtoa]
