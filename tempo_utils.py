@@ -397,7 +397,7 @@ def run_tempo(toas, parfile, show_output=False,
                 and not any([t.command=='FORMAT' for t in toas]):
             print "tempo_utils.run_tempo: Adding 'FORMAT 1'"
             extra_cmds.insert(0,toa('FORMAT 1'))
-        write_toa_file("pulsar.toa", extra_cmds + toas)
+        write_toa_file("pulsar.toa", toalist(extra_cmds+toas))
         tempo_args = ""
         if gls: tempo_args += " -G"
         cmd = "tempo " + tempo_args + " -f pulsar.par pulsar.toa"
