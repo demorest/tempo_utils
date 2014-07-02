@@ -17,14 +17,14 @@ def toa_format(line):
             return "Command"
         elif re.match("^\s+$", line):
             return "Blank"
-        elif len(line) > 80: 
-            return "Tempo2"
         elif re.match("[0-9a-z@] ",line):
             return "Princeton"
         elif re.match("\S\S",line) and line[14]=='.':
             return "ITOA"
         elif re.match(" ",line) and line[41]=='.':
             return "Parkes"
+        elif len(line.split())>=5:
+            return "Tempo2"
         else:
             return "Unknown"
     except:
