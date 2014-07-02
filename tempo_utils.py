@@ -19,7 +19,8 @@ def toa_format(line):
             return "Blank"
         elif re.match("[0-9a-z@] ",line):
             return "Princeton"
-        elif re.match("\S\S",line) and line[14]=='.':
+        elif (re.match("\S\S",line) and line[14]=='.' 
+                and re.match("[a-zA-Z]{2}",line[57:59])):
             return "ITOA"
         elif re.match(" ",line) and line[41]=='.':
             return "Parkes"
