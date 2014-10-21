@@ -408,9 +408,17 @@ def run_tempo(toas, parfile, show_output=False,
         resids = read_resid2_file()
         toa_resid_match(toas, resids)
         lis = open("tempo.lis",'r').readlines()
-        chi2 = float(lis[-1][14:23])
+        chi2_str = lis[-1][14:23]
+        try: 
+            chi2 = float(chi2_str)
+        except ValueError:
+            chi2 = None
         ndof = float(lis[-1][24:30])
-        rms = float(lis[-2][63:74])
+        rms_str = lis[-2][63:74]
+        try:
+            rms = float(rms_str)
+        except ValueError:
+            rms = None
         # Capture output par file if needed
         if get_output_par:
             if psrname is not None:
