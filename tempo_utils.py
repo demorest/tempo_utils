@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-import re, struct, os
+import re, struct, os, string
 import numpy
 
 toa_commands = ("DITHER", "EFAC", "EMAX", "EMAP", "EMIN", "EQUAD", "FMAX",
@@ -432,4 +432,59 @@ def run_tempo(toas, parfile, show_output=False,
         return (chi2,ndof,rms,outparlines)
     else:
         return (chi2,ndof,rms)
+
+class polyco:
+
+    def __init__(self, fname='polyco.dat'):
+        # TODO: error checking, 
+        # extend to deal with multiple polyco blocks
+        fin = open(fname,'r')
+        line1 = fin.readline().strip().split()
+        line2 = fin.readline().strip().split()
+        self.src = line1[0]
+        (s_imjd, s_fmjd) = line1[3].split('.')
+        self.imjd = int(s_imjd)
+        self.fmjd = float('.' + s_fmjd)
+        self.dm = float(line1[4])
+        self.earth_z4 = float(line1[5])
+        self.log10_rms = float(line1[6])
+        self.rphase = float(line2[0])
+        self.rfreq = float(line2[1])
+        self.site = line2[2]
+        self.span = float(line2[3])
+        self.ncoeff = int(line2[4])
+        self.obsfreq = float(line2[5])
+        try:
+            self.ophase = float(line2[6])
+        except IndexError:
+            self.ophase = None
+        nclines = self.ncoeff / 3
+        if self.ncoeff % 3:
+            nclines += 1
+        coeff_str = ''
+        for i in range(nclines):
+            coeff_str += fin.readline().strip() + ' '
+        coeff_lines = map(string.strip,fin.readlines())
+        self.coeffs = map(float,coeff_str.replace('D','e').split())
+
+    def phase_and_freq(self,mjd,fmjd=0.0):
+        dt_min = (float(mjd - self.imjd) + (fmjd - self.fmjd))*1440.0
+        if abs(dt_min) > self.span/2.0:
+            raise RuntimeError('MJD outside polyco span (dt=%.1f min)' % dt_min)
+        freq = 0.0
+        phase = self.coeffs[self.ncoeff-1]
+        for i in range(self.ncoeff-1,0,-1):
+            phase = dt*phase + self.coeffs[i-1]
+            freq = dt_min*freq + float(i)*self.coeffs[i]
+        freq = self.rfreq + freq/60.0
+        phase += self.rphase + dt*60.0*self.rfreq
+        return (phase, freq)
+
+    def phase(self,mjd,fmjd=0.0):
+        (phase,freq) = self.phase_and_freq(mjd,fmjd)
+        return phase
+
+    def freq(self,mjd,fmjd=0.0):
+        (phase,freq) = self.phase_and_freq(mjd,fmjd)
+        return freq
 
