@@ -474,10 +474,10 @@ class polyco:
         freq = 0.0
         phase = self.coeffs[self.ncoeff-1]
         for i in range(self.ncoeff-1,0,-1):
-            phase = dt*phase + self.coeffs[i-1]
+            phase = dt_min*phase + self.coeffs[i-1]
             freq = dt_min*freq + float(i)*self.coeffs[i]
         freq = self.rfreq + freq/60.0
-        phase += self.rphase + dt*60.0*self.rfreq
+        phase += self.rphase + dt_min*60.0*self.rfreq
         return (phase, freq)
 
     def phase(self,mjd,fmjd=0.0):
