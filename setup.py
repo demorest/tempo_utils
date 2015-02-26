@@ -1,2 +1,3 @@
 from distutils.core import setup
-setup(name='tempo_utils', version='0.0', py_modules=['tempo_utils'])
+setup(name='tempo_utils', version='0.0', 
+        py_modules=['tempo_utils','tempo2_utils'])
