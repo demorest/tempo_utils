@@ -371,7 +371,7 @@ def toa_resid_match(toas, resids):
 
 import os, tempfile
 def run_tempo(toas, parfile, show_output=False, 
-        get_output_par=False, gls=False):
+        get_output_par=False, gls=False, quiet=False):
     """Run tempo on the given TOA list using the given parfile.  Residuals
     are read and filled into the toa structs on successful completion."""
     orig_dir = os.getcwd()
@@ -391,12 +391,14 @@ def run_tempo(toas, parfile, show_output=False,
         extra_cmds = toalist([])
         # Always add mode 1 if it's not there
         if not any([t.command=='MODE' for t in toas]):
-            print "tempo_utils.run_tempo: Adding 'MODE 1'"
+            if not quiet:
+                print "tempo_utils.run_tempo: Adding 'MODE 1'"
             extra_cmds.insert(0,toa('MODE 1'))
         # Check if there are tempo2 TOAs but no FORMAT line
         if any([t.format=='Tempo2' for t in toas]) \
                 and not any([t.command=='FORMAT' for t in toas]):
-            print "tempo_utils.run_tempo: Adding 'FORMAT 1'"
+            if not quiet:
+                print "tempo_utils.run_tempo: Adding 'FORMAT 1'"
             extra_cmds.insert(0,toa('FORMAT 1'))
         write_toa_file("pulsar.toa", toalist(extra_cmds+toas))
         tempo_args = ""
