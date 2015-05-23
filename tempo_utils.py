@@ -137,6 +137,17 @@ class toa:
         if self.format == 'Comment':
             self.__init__(self.line.lstrip('C# '))
 
+def _unpack_record(raw,fmt=None):
+    dlen = len(raw) - 8
+    if fmt is None: 
+        fmt = 'd' * (dlen/8)
+    ss = struct.unpack('=i'+fmt+'i',raw)
+    if ss[0]!=dlen or ss[-1]!=dlen:
+        raise RuntimeError,\
+                "Record length does not match (s1=%d s2=%d len=%d)" % (ss[0],
+                        ss[-1], dlen)
+    return ss[1:-1]
+
 class residual:
     def __init__(self,raw=None):
         self.mjd_bary = None
@@ -172,7 +183,6 @@ class residual:
         self.prefit_us *= 1e6
 
 
-
 def read_resid2_file(filename="resid2.tmp"):
     """Reads a tempo 'resid2.tmp' file and returns the result as a
     list of residual objects.  Each residual object has fields corresponding
@@ -195,6 +205,23 @@ def read_resid2_file(filename="resid2.tmp"):
         r = f.read(80)
     f.close()
     return resids
+
+def read_design_matrix(filename='design.tmp'):
+    """Reads a tempo 'design.tmp' file and returns the result as a 
+    numpy array, dims (ntoa,nparam)"""
+    f = open(filename, "r")
+    # First record should be two ints giving array size
+    (ntoa,nparam) = _unpack_record(f.read(16),'ii')
+    result = numpy.zeros((ntoa,nparam+1))
+    # First two elements are time and weight, which we will ignore 
+    # here.
+    rsize = (nparam+2)*8 + 8
+    for i in range(ntoa):
+        result[i,:-1] = _unpack_record(f.read(rsize))[2:]
+    # Constant phase term
+    result[:,-1] = 1.0
+    f.close()
+    return result
 
 class toalist(list):
 
