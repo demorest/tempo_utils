@@ -247,9 +247,9 @@ class toalist(list):
             return numpy.array([t.res.res_phase for t in self if t.is_toa()])
     def get_prefit(self,units='us'):
         if units=='us':
-            return numpy.array([t.res.res_us for t in self if t.is_toa()])
+            return numpy.array([t.res.prefit_us for t in self if t.is_toa()])
         elif units=='phase':
-            return numpy.array([t.res.res_phase for t in self if t.is_toa()])
+            return numpy.array([t.res.prefit_phase for t in self if t.is_toa()])
     def get_resid_err(self):
         return numpy.array([t.res.err_us for t in self if t.is_toa()])
     def get_freq(self):
