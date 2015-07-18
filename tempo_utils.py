@@ -3,7 +3,7 @@ import re, struct, os, string
 import numpy
 
 toa_commands = ("DITHER", "EFAC", "EMAX", "EMAP", "EMIN", "EQUAD", "FMAX",
-        "FMIN", "INCLUDE", "INFO", "JUMP", "MODE", "NOSKIP", "PHA1", "PHA2", 
+        "FMIN", "INCLUDE", "INFO", "JUMP", "MODE", "NOSKIP", "PHA1", "PHA2",
         "PHASE", "SEARCH", "SIGMA", "SIM", "SKIP", "TIME", "TRACK", "ZAWGT",
         "FORMAT", "EFLOOR")
 
@@ -19,7 +19,7 @@ def toa_format(line):
             return "Blank"
         elif re.match("[0-9a-z@] ",line):
             return "Princeton"
-        elif (re.match("\S\S",line) and line[14]=='.' 
+        elif (re.match("\S\S",line) and line[14]=='.'
                 and re.match("[a-zA-Z]{2}",line[57:59])):
             return "ITOA"
         elif re.match(" ",line) and line[41]=='.':
@@ -111,7 +111,7 @@ class toa:
 
     def is_commented_toa(self):
         """Return True if this is a commented out TOA line"""
-        if self.format == "Comment": 
+        if self.format == "Comment":
             try:
                 return toa(self.line.lstrip('C# ')).is_toa()
             except:
@@ -139,7 +139,7 @@ class toa:
 
 def _unpack_record(raw,fmt=None):
     dlen = len(raw) - 8
-    if fmt is None: 
+    if fmt is None:
         fmt = 'd' * (dlen/8)
     ss = struct.unpack('=i'+fmt+'i',raw)
     if ss[0]!=dlen or ss[-1]!=dlen:
@@ -157,13 +157,14 @@ class residual:
         self.rf_bary = None
         self.weight = None
         self.err_us = None
+        self.prefit_phase = None
         self.prefit_us = None
         self.ddm = None
         if raw!=None:
             self.parse_raw(raw)
 
     def __repr__(self):
-        if self.mjd_bary==None: 
+        if self.mjd_bary==None:
             return "Uninitialized residual"
         return "Residual at MJD %.10f, %.3f MHz: %+.3f +/- %.3f us" \
                 % (self.mjd_bary, self.rf_bary, self.res_us, self.err_us)
@@ -172,30 +173,31 @@ class residual:
         if len(raw) != 80:
             raise RuntimeError, "Invalid raw residual block (len=%d)" \
                     % len(raw)
-        (s1, self.mjd_bary, self.res_phase, self.res_us, self.ophase, 
-                self.rf_bary, self.weight, self.err_us, self.prefit_us,
+        (s1, self.mjd_bary, self.res_phase, self.res_us, self.ophase,
+                self.rf_bary, self.weight, self.err_us, self.prefit_phase,
                 self.ddm, s2) = struct.unpack("=idddddddddi", raw)
         if s1 != 72 or s2 != 72:
             raise RuntimeError, "Error parsing residual block (s1=%d s2=%d)" \
                     % (s1, s2)
         # Change units:
         self.res_us *= 1e6
-        self.prefit_us *= 1e6
+        self.prefit_us = self.res_us / self.res_phase * self.prefit_phase
 
 
 def read_resid2_file(filename="resid2.tmp"):
     """Reads a tempo 'resid2.tmp' file and returns the result as a
     list of residual objects.  Each residual object has fields corresponding
     to the info in resid2.tmp:
-      resid.mjd_bary    Barycentric MJD
-      resid.res_phase   Residual in turns
-      resid.res_us      Residual in us
-      resid.ophase      Orbital phase in turns
-      resid.rf_bary     Barycentric freq, MHz
-      resid.weight      Weight of point in fit
-      resid.err_us      TOA uncertainty, us
-      resid.prefit_us   Prefit residual, us
-      resid.ddm         DM correction from TOA line
+      resid.mjd_bary      Barycentric MJD
+      resid.res_phase     Residual in turns
+      resid.res_us        Residual in us
+      resid.ophase        Orbital phase in turns
+      resid.rf_bary       Barycentric freq, MHz
+      resid.weight        Weight of point in fit
+      resid.err_us        TOA uncertainty, us
+      resid.prefit_phase  Prefit residual in turns
+      resid.prefit_us     Prefit residual, us
+      resid.ddm           DM correction from TOA line
     """
     f = open(filename, "r")
     resids = []
@@ -207,13 +209,13 @@ def read_resid2_file(filename="resid2.tmp"):
     return resids
 
 def read_design_matrix(filename='design.tmp'):
-    """Reads a tempo 'design.tmp' file and returns the result as a 
+    """Reads a tempo 'design.tmp' file and returns the result as a
     numpy array, dims (ntoa,nparam)"""
     f = open(filename, "r")
     # First record should be two ints giving array size
     (ntoa,nparam) = _unpack_record(f.read(16),'ii')
     result = numpy.zeros((ntoa,nparam+1))
-    # First two elements are time and weight, which we will ignore 
+    # First two elements are time and weight, which we will ignore
     # here.
     rsize = (nparam+2)*8 + 8
     for i in range(ntoa):
@@ -239,6 +241,11 @@ class toalist(list):
         if commented: ntoa += sum(t.is_commented_toa() for t in self)
         return ntoa
     def get_resids(self,units='us'):
+        if units=='us':
+            return numpy.array([t.res.res_us for t in self if t.is_toa()])
+        elif units=='phase':
+            return numpy.array([t.res.res_phase for t in self if t.is_toa()])
+    def get_prefit(self,units='us'):
         if units=='us':
             return numpy.array([t.res.res_us for t in self if t.is_toa()])
         elif units=='phase':
@@ -274,7 +281,7 @@ class toalist(list):
 
 def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
         emax=0.0, process_emax=True, process_skips=True, convert_skips=False):
-    """Read the given filename and return a list of toa objects 
+    """Read the given filename and return a list of toa objects
     parsed from it.   Options:
 
         process_includes: if True, read TOA lines from any INCLUDED files.
@@ -291,7 +298,7 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
 
         convert_skips: if True, SKIP'd lines are converted to comments.
     """
-    # Change to directory where top-level file is in order to process 
+    # Change to directory where top-level file is in order to process
     # relative include paths correctly.  This might break if there
     # are multiple levels of include...
     orig_dir = None
@@ -313,7 +320,7 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
                 elif newtoa.command=="NOSKIP" and process_skips:
                     skip = False
                     continue
-                if skip: 
+                if skip:
                     if convert_skips: newtoa.comment()
                     else: continue
                 if newtoa.command=="EMAX" and process_emax:
@@ -392,20 +399,21 @@ def toa_resid_match(toas, resids):
         raise RuntimeError, "TOA count (%d) != residual count (%d)" \
                 % (toa_count, len(resids))
     for toa in toas:
-        if not toa.is_toa(): 
+        if not toa.is_toa():
             continue
         toa.res = resids.pop(0)
 
 import os, tempfile
-def run_tempo(toas, parfile, show_output=False, 
-        get_output_par=False, gls=False, quiet=False):
+def run_tempo(toas, parfile, show_output=False,
+        get_output_par=False, gls=False, other_options=False,
+        quiet=False):
     """Run tempo on the given TOA list using the given parfile.  Residuals
     are read and filled into the toa structs on successful completion."""
     orig_dir = os.getcwd()
     try:
         temp_dir = tempfile.mkdtemp(prefix="tempo")
         psrname = None
-        try: 
+        try:
             lines = open(parfile,'r').readlines()
         except:
             lines = parfile
@@ -428,7 +436,7 @@ def run_tempo(toas, parfile, show_output=False,
                 print "tempo_utils.run_tempo: Adding 'FORMAT 1'"
             extra_cmds.insert(0,toa('FORMAT 1'))
         write_toa_file("pulsar.toa", toalist(extra_cmds+toas))
-        tempo_args = ""
+        tempo_args = other_options if other_options else ""
         if gls: tempo_args += " -G"
         cmd = "tempo " + tempo_args + " -f pulsar.par pulsar.toa"
         if show_output==False:
@@ -438,7 +446,7 @@ def run_tempo(toas, parfile, show_output=False,
         toa_resid_match(toas, resids)
         lis = open("tempo.lis",'r').readlines()
         chi2_str = lis[-1][14:23]
-        try: 
+        try:
             chi2 = float(chi2_str)
         except ValueError:
             chi2 = None
@@ -465,7 +473,7 @@ def run_tempo(toas, parfile, show_output=False,
 class polyco:
 
     def __init__(self, fname='polyco.dat'):
-        # TODO: error checking, 
+        # TODO: error checking,
         # extend to deal with multiple polyco blocks
         fin = open(fname,'r')
         line1 = fin.readline().strip().split()
@@ -516,4 +524,3 @@ class polyco:
     def freq(self,mjd,fmjd=0.0):
         (phase,freq) = self.phase_and_freq(mjd,fmjd)
         return freq
-
