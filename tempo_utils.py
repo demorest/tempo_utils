@@ -282,7 +282,8 @@ class toalist(list):
             return (x**2).sum()
 
 def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
-        emax=0.0, process_emax=True, process_skips=True, convert_skips=False):
+        emax=0.0, process_emax=True, fmin=0.0, process_fmin=True,
+        fmax=0.0, process_fmax=True, process_skips=True, convert_skips=False):
     """Read the given filename and return a list of toa objects
     parsed from it.   Options:
 
@@ -294,7 +295,15 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
 
         emax: Set to apply a certain EMAX value as TOAs are read.
 
+        fmin: Set to apply a certain FMIN value as TOAs are read.
+
+        fmax: Set to apply a certain FMAX value as TOAs are read.
+
         process_emax: if True, EMAX statements are applied as TOAs are read.
+
+        process_fmin: if True, FMIN statements are applied as TOAs are read.
+
+        process_fmax: if True, FMAX statements are applied as TOAs are read.
 
         process_skips: if True, SKIP'd sections are not read in.
 
@@ -328,12 +337,20 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
                 if newtoa.command=="EMAX" and process_emax:
                     emax = float(newtoa.arg)
                     continue
+                if newtoa.command=="FMIN" and process_fmin:
+                    fmin = float(newtoa.arg)
+                    continue
+                if newtoa.command=="FMAX" and process_fmax:
+                    fmax = float(newtoa.arg)
+                    continue
                 if newtoa.command=="INFO":
                     read_toa_file.info = newtoa.arg
                 if newtoa.command=="INCLUDE" and process_includes:
                     toas += read_toa_file(newtoa.arg,
-                            ignore_blanks=ignore_blanks,top=False,emax=emax,
-                            process_emax=process_emax,
+                            ignore_blanks=ignore_blanks,top=False,
+                            emax=emax, process_emax=process_emax,
+                            fmin=fmin, process_fmin=process_fmin,
+                            fmax=fmax, process_fmax=process_fmax,
                             process_skips=process_skips)
                 else:
                     toas += [newtoa]
@@ -346,6 +363,10 @@ def read_toa_file(filename,process_includes=True,ignore_blanks=True,top=True,
             else:
                 newtoa.info = read_toa_file.info
                 if emax>0.0 and newtoa.error>emax:
+                    pass
+                elif fmin>0.0 and newtoa.freq<fmin:
+                    pass
+                elif fmax>0.0 and newtoa.freq>fmax:
                     pass
                 else:
                     toas += [newtoa]
