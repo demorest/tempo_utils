@@ -472,12 +472,41 @@ def run_tempo(toas, parfile, show_output=False,
     else:
         return (chi2,ndof,rms)
 
-class polyco:
+class polycos(list):
+    """Collection of polyco sets."""
 
-    def __init__(self, fname='polyco.dat'):
-        # TODO: error checking,
-        # extend to deal with multiple polyco blocks
+    def __init__(self,fname='polyco.dat'):
         fin = open(fname,'r')
+        more = True
+        while more:
+            try:
+                self.append(polyco(fin=fin))
+            except:
+                more = False
+
+    def phase_and_freq(self,mjd,fmjd=0.0):
+        for p in self:
+            try:
+                return p.phase_and_freq(mjd,fmjd)
+            except RuntimeError:
+                pass
+        raise RuntimeError('No matching polycos found (mjd=%.10f)'%(mjd+fmjd))
+
+    def phase(self,mjd,fmjd=0.0):
+        (phase,freq) = self.phase_and_freq(mjd,fmjd)
+        return phase
+
+    def freq(self,mjd,fmjd=0.0):
+        (phase,freq) = self.phase_and_freq(mjd,fmjd)
+        return freq
+
+class polyco:
+    """Single polyco set."""
+
+    def __init__(self, fname='polyco.dat', fin=None):
+        # TODO: error checking
+        if fin is None:
+            fin = open(fname,'r')
         line1 = fin.readline().strip().split()
         line2 = fin.readline().strip().split()
         self.src = line1[0]
@@ -503,7 +532,6 @@ class polyco:
         coeff_str = ''
         for i in range(nclines):
             coeff_str += fin.readline().strip() + ' '
-        coeff_lines = map(string.strip,fin.readlines())
         self.coeffs = map(float,coeff_str.replace('D','e').split())
 
     def phase_and_freq(self,mjd,fmjd=0.0):
