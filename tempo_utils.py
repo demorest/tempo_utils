@@ -1,5 +1,6 @@
 #! /usr/bin/env python
-import re, struct, os, string
+import re, struct, os, string, shutil
+import sys
 import numpy
 
 toa_commands = ("DITHER", "EFAC", "EMAX", "EMAP", "EMIN", "EQUAD", "FMAX",
@@ -429,7 +430,7 @@ def toa_resid_match(toas, resids):
 import os, tempfile
 def run_tempo(toas, parfile, show_output=False,
         get_output_par=False, gls=False, other_options=False,
-        quiet=False):
+        quiet=False,dcovfile=False):
     """Run tempo on the given TOA list using the given parfile.  Residuals
     are read and filled into the toa structs on successful completion."""
     orig_dir = os.getcwd()
@@ -461,6 +462,17 @@ def run_tempo(toas, parfile, show_output=False,
         write_toa_file("pulsar.toa", toalist(extra_cmds+toas))
         tempo_args = other_options if other_options else ""
         if gls: tempo_args += " -G"
+        created_dcovfile = False
+        if dcovfile:
+            if os.path.exists(dcovfile): # See if dcovfile already exists
+                shutil.copy(dcovfile,os.path.basename(dcovfile))
+                if not any([l.startswith('DCOVFILE') for l in lines]):
+                    lines.append('DCOVFILE ' + os.path.basename(dcovfile) + '\n')
+            else: # dcovfile doesn't exist, so we will have tempo make it.
+                tempo_args += " -C"
+                created_dcovfile = True
+                if any([l.startswith('DCOVFILE') for l in lines]):
+                    lines = [l for l in lines if not l.startswith("DCOVFILE")]
         cmd = "tempo " + tempo_args + " -f pulsar.par pulsar.toa"
         if show_output==False:
             cmd += " > /dev/null"
@@ -485,6 +497,8 @@ def run_tempo(toas, parfile, show_output=False,
                 outparlines = open('%s.par' % psrname).readlines()
             else:
                 outparlines = None
+        if created_dcovfile:
+            os.rename("datacov.tmp",dcovfile)
     finally:
         os.chdir(orig_dir)
     os.system("rm -rf %s" % temp_dir)
