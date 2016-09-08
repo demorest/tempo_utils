@@ -467,12 +467,10 @@ def run_tempo(toas, parfile, show_output=False,
             if os.path.exists(dcovfile): # See if dcovfile already exists
                 shutil.copy(dcovfile,os.path.basename(dcovfile))
                 if not any([l.startswith('DCOVFILE') for l in lines]):
-                    lines.append('DCOVFILE ' + os.path.basename(dcovfile) + '\n')
-            else: # dcovfile doesn't exist, so we will have tempo make it.
+                    open("pulsar.par",'a').writelines('DCOVFILE ' + os.path.basename(dcovfile) + '\n')
+            else: # dcovfile doesn't exist, so have tempo make it.
                 tempo_args += " -C"
                 created_dcovfile = True
-                if any([l.startswith('DCOVFILE') for l in lines]):
-                    lines = [l for l in lines if not l.startswith("DCOVFILE")]
         cmd = "tempo " + tempo_args + " -f pulsar.par pulsar.toa"
         if show_output==False:
             cmd += " > /dev/null"
