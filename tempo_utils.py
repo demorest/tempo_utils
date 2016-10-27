@@ -557,7 +557,7 @@ class polyco:
 
     def phase_and_freq(self,mjd,fmjd=0.0):
         dt_min = (float(mjd - self.imjd) + (fmjd - self.fmjd))*1440.0
-        if abs(dt_min) > self.span/2.0:
+        if abs(dt_min) > (1.01*self.span/2.0):
             raise RuntimeError('MJD outside polyco span (dt=%.1f min)' % dt_min)
         freq = 0.0
         phase = self.coeffs[self.ncoeff-1]
