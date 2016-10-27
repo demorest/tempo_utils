@@ -2,6 +2,7 @@
 import re, struct, os, string, shutil
 import sys
 import numpy
+import tempfile
 
 toa_commands = ("DITHER", "EFAC", "EMAX", "EMAP", "EMIN", "EQUAD", "FMAX",
         "FMIN", "INCLUDE", "INFO", "JUMP", "MODE", "NOSKIP", "PHA1", "PHA2",
@@ -516,6 +517,28 @@ class polycos(list):
                 self.append(polyco(fin=fin))
             except:
                 more = False
+
+    @classmethod
+    def generate(cls, parfile, site, mjd_start, tobs, outfile=None):
+        """Generate a polyco set from parfile.  If outfile is not none,
+        the polycos will be saved in the given file name, otherwise
+        deleted after they are read."""
+        tmpdir = None
+        origdir = os.getcwd()
+        try:
+            tmpdir = tempfile.mkdtemp(prefix='polyco')
+            fullpar = os.path.abspath(parfile)
+            if outfile is not None: fullout=os.path.abspath(outfile)
+            os.chdir(tmpdir)
+            os.system('tempo ' + 
+                    '-f %s -ZPSR=psr -ZSITE=%s -ZSTART=%.8f -ZTOBS=%.4f'%(
+                        fullpar, site, mjd_start, tobs))
+            if outfile is not None:
+                shutil.copy('polyco.dat', fullout)
+            return cls()
+        finally:
+            os.chdir(origdir)
+            shutil.rmtree(tmpdir)
 
     def phase_and_freq(self,mjd,fmjd=0.0):
         for p in self:
