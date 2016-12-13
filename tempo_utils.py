@@ -519,20 +519,33 @@ class polycos(list):
                 more = False
 
     @classmethod
-    def generate(cls, parfile, site, mjd_start, tobs, outfile=None):
+    def generate(cls, parfile, site, mjd_start, tobs, 
+            ncoeff=15, freq=1420.0, outfile=None):
         """Generate a polyco set from parfile.  If outfile is not none,
         the polycos will be saved in the given file name, otherwise
         deleted after they are read."""
+        # See if parfile is lines or a path
+        try:
+            parlines = open(parfile,'r').readlines()
+        except:
+            parlines = parfile
+        for l in parlines:
+            if l.startswith('PSR'):
+                psrname = (l.split()[1]).lstrip('BJ')
         tmpdir = None
         origdir = os.getcwd()
         try:
             tmpdir = tempfile.mkdtemp(prefix='polyco')
-            fullpar = os.path.abspath(parfile)
+            open("%s/pulsar.par" % tmpdir,'w').writelines(parlines)
             if outfile is not None: fullout=os.path.abspath(outfile)
             os.chdir(tmpdir)
-            os.system('tempo ' + 
-                    '-f %s -ZPSR=psr -ZSITE=%s -ZSTART=%.8f -ZTOBS=%.4f'%(
-                        fullpar, site, mjd_start, tobs))
+            os.system('tempo -f pulsar.par' 
+                    + ' -ZPSR=%s' % psrname
+                    + ' -ZNCOEFF=%d' % ncoeff
+                    + ' -ZFREQ=%.6f' % freq
+                    + ' -ZSITE=%s' % site
+                    + ' -ZSTART=%.8f' % mjd_start
+                    + ' -ZTOBS=%.4f' % tobs)
             if outfile is not None:
                 shutil.copy('polyco.dat', fullout)
             return cls()
