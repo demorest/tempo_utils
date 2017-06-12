@@ -2,8 +2,10 @@
 
 # Simple python functions to help gather results from tempo2
 
+import os
 import numpy
 import subprocess
+import tempfile
 
 def general2(parfile, timfile, params):
     """
@@ -93,7 +95,31 @@ def stats(parfile,timfile):
 
     return chi2
 
-
+def newpar(parfile,timfile):
+    """
+    Run tempo2, return new parfile (as list of lines).  input parfile
+    can be either lines or a filename.
+    """
+    orig_dir = os.getcwd()
+    try:
+        temp_dir = tempfile.mkdtemp(prefix="tempo2")
+        try:
+            lines = open(parfile,'r').readlines()
+        except:
+            lines = parfile
+        open("%s/pulsar.par" % temp_dir, 'w').writelines(lines)
+        timpath = os.path.abspath(timfile)
+        os.chdir(temp_dir)
+        cmd = "tempo2 -nobs 30000 -newpar -f pulsar.par " + timpath
+        os.system(cmd + " > /dev/null")
+        outparlines = open('new.par').readlines()
+    finally:
+        os.chdir(orig_dir)
+    os.system("rm -rf %s" % temp_dir)
+    for l in outparlines:
+        if l.startswith('TRES'): rms = float(l.split()[1])
+        elif l.startswith('CHI2R'): (foo, chi2r, ndof) = l.split()
+    return float(chi2r)*float(ndof), int(ndof), rms, outparlines
 
 
 
