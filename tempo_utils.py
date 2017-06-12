@@ -553,6 +553,15 @@ class polycos(list):
             os.chdir(origdir)
             shutil.rmtree(tmpdir)
 
+    def match(self,mjd,fmjd=0.0):
+        for p in self:
+            try:
+                foo = p.phase_and_freq(mjd,fmjd)
+                return p
+            except RuntimeError:
+                pass
+        raise RuntimeError('No matching polycos found (mjd=%.10f)'%(mjd+fmjd))
+
     def phase_and_freq(self,mjd,fmjd=0.0):
         for p in self:
             try:
