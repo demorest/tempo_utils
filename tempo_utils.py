@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import re, struct, os, string, shutil
+import subprocess
 import sys
 import numpy
 import tempfile
@@ -509,9 +510,11 @@ def run_tempo(toas, parfile, show_output=False,
 class polycos(list):
     """Collection of polyco sets."""
 
-    def __init__(self,fname='polyco.dat'):
+    def __init__(self,fname='polyco.dat',tempo_args=None,tempo_output=None):
         fin = open(fname,'r')
         more = True
+        self.tempo_args = tempo_args
+        self.tempo_output = tempo_output
         while more:
             try:
                 self.append(polyco(fin=fin))
@@ -539,16 +542,21 @@ class polycos(list):
             open("%s/pulsar.par" % tmpdir,'w').writelines(parlines)
             if outfile is not None: fullout=os.path.abspath(outfile)
             os.chdir(tmpdir)
-            os.system('tempo -f pulsar.par' 
-                    + ' -ZPSR=%s' % psrname
-                    + ' -ZNCOEFF=%d' % ncoeff
-                    + ' -ZFREQ=%.6f' % freq
-                    + ' -ZSITE=%s' % site
-                    + ' -ZSTART=%.8f' % mjd_start
-                    + ' -ZTOBS=%.4f' % tobs)
+            try:
+                tempo_args = ['tempo', '-f', 'pulsar.par',
+                        '-ZPSR=%s' % psrname,
+                        '-ZNCOEFF=%d' % ncoeff,
+                        '-ZFREQ=%.6f' % freq,
+                        '-ZSITE=%s' % site,
+                        '-ZSTART=%.8f' % mjd_start,
+                        '-ZTOBS=%.4f' % tobs]
+                tempo_output = subprocess.check_output(tempo_args,
+                        stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as e:
+                tempo_output = e.output
             if outfile is not None:
                 shutil.copy('polyco.dat', fullout)
-            return cls()
+            return cls(tempo_args=tempo_args,tempo_output=tempo_output)
         finally:
             os.chdir(origdir)
             shutil.rmtree(tmpdir)
