@@ -620,6 +620,38 @@ class polyco:
             coeff_str += fin.readline().strip() + ' '
         self.coeffs = map(float,coeff_str.replace('D','e').split())
 
+    def as_string(self):
+        # Return the info formatted as a polyco block
+        hh = int(self.fmjd*24.0)
+        mm = int(self.fmjd*24.0*60.0 - hh*60.0)
+        ss = self.fmjd*86400.0 - hh*3600.0 - mm*60.0
+        mjd_str = str(self.imjd) + ('%.11f'%self.fmjd).lstrip('0')
+        line1 = '%-10s %9s%11.2f%20s%21.6f %6.3f%7.3f' % (
+                self.src,
+                'DD-MMM-YY',
+                hh*10000 + mm*100 + ss,
+                mjd_str,
+                self.dm,
+                self.earth_z4,
+                self.log10_rms
+                )
+        line2 = '%20.6f%18.12f%5s%5d%5d%10.3f%7.4f' % (
+                self.rphase,
+                self.rfreq,
+                self.site,
+                int(self.span),
+                self.ncoeff,
+                self.obsfreq,
+                self.ophase if self.ophase is not None else 0.0
+                )
+        lines = [line1, line2]
+        for i in range(0,self.ncoeff,3):
+            cline = ''
+            for c in self.coeffs[i:i+3]:
+                cline += ('%25.17E' % c).replace('E','D')
+            lines += [cline,]
+        return string.join(lines,'\n')
+
     def phase_and_freq(self,mjd,fmjd=0.0):
         dt_min = (float(mjd - self.imjd) + (fmjd - self.fmjd))*1440.0
         if abs(dt_min) > (1.01*self.span/2.0):
