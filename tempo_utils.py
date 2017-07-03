@@ -592,7 +592,25 @@ class polyco:
     def __init__(self, fname='polyco.dat', fin=None):
         # TODO: error checking
         if fin is None:
-            fin = open(fname,'r')
+            if fname is None:
+                # Init everything with dummy values
+                self.src = 'psr'
+                self.imjd = 0
+                self.fmjd = 0.0
+                self.dm = 0.0
+                self.earth_z4 = 0.0
+                self.log10_rms = 10.0
+                self.rphase = 0.0
+                self.rfreq = 0.0
+                self.site = '0'
+                self.span = 0.0
+                self.ncoeff = 1
+                self.obsfreq = 0.0
+                self.ophase = None
+                self.coeffs = [0.0,]
+                return
+            else:
+                fin = open(fname,'r')
         line1 = fin.readline().strip().split()
         line2 = fin.readline().strip().split()
         self.src = line1[0]
