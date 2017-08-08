@@ -4,6 +4,7 @@ import subprocess
 import sys
 import numpy
 import tempfile
+from collections import namedtuple
 
 toa_commands = ("DITHER", "EFAC", "EMAX", "EMAP", "EMIN", "EQUAD", "FMAX",
         "FMIN", "INCLUDE", "INFO", "JUMP", "MODE", "NOSKIP", "PHA1", "PHA2",
@@ -690,3 +691,107 @@ class polyco:
     def freq(self,mjd,fmjd=0.0):
         (phase,freq) = self.phase_and_freq(mjd,fmjd)
         return freq
+
+class parfile(object):
+
+    # simple struct for DMX
+    _dmx_range = namedtuple('dmx_range',
+            ['idx','val','ep','r1','r2','f1','f2'])
+
+    def __init__(self, fname):
+        self.lines = open(fname,'r').readlines()
+
+    @staticmethod
+    def _is_comment(parline):
+        if parline.startswith('#') or parline.startswith('C '):
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def _fortran_float(strval):
+        return float(strval.replace('D','e'))
+
+    @property
+    def keys(self):
+        keys = []
+        for l in self.lines:
+            if not self._is_comment(l):
+                keys.append(l.split()[0])
+        return keys
+
+    def _iline(self,key):
+        if not key in self.keys:
+            raise KeyError("key '%s' not found" % key)
+        for i, l in enumerate(self.lines):
+            if l.startswith(key+' '):
+                return i
+
+    def line(self, key):
+        return self.lines[self._iline(key)].rstrip()
+
+    def val(self, key, dtype=str):
+        l = self.line(key)
+        if dtype=='float' or dtype==float: 
+            dtype_func = self._fortran_float
+        else: 
+            dtype_func = dtype
+        return dtype_func(l.split()[1])
+
+    def set_val(self,key,val):
+        """Set a new value for this parameter."""
+        # Not much checking of whether this is allowed for the given
+        # param.  val should be a string
+        idx = self._iline(key)
+        ltmp = self.lines[idx].rstrip()
+        vals = ltmp.split()
+        # Does not handle jumps yet
+        vals[1] = val
+        ltmp = string.join(vals,' ') + '\n'
+        self.lines[idx] = ltmp
+
+    def no_fit(self):
+        """Turn all fit params off.  Note, not fully general yet."""
+        self.lines = [l.replace(' 1 ',' 0 ') for l in self.lines]
+
+    def is_fit(self,key):
+        """Return whether a given param is being fit."""
+        idx = self._iline(key)
+        ltmp = self.lines[idx].rstrip()
+        vals = ltmp.split()
+        nval = len(vals)
+        if nval>=3:
+            if vals[0]=='JUMP':
+                return vals[4]=='1'
+            else:
+                return vals[2]=='1'
+        return False
+
+    def set_fit(self,key,fit=True):
+        """Turn the fit for this parameter on or off."""
+        # Not much checking of whether this is allowed for the given
+        # param.
+        if fit and self.is_fit(key): return
+        if not fit and not self.is_fit(key): return
+        idx = self._iline(key)
+        ltmp = self.lines[idx].rstrip()
+        vals = ltmp.split()
+        nval = vals
+        if nval==2 and fit:
+            ltmp += ' 1\n'
+        elif nval>=3:
+            vals[2] = '1' if fit else '0'
+            ltmp = string.join(vals,' ') + '\n'
+        self.lines[idx] = ltmp
+
+    def dmx(self,dmxidx):
+        """Return all dmx info for the given DMX range."""
+        val = self.val('DMX_%04d' % dmxidx, float)
+        stuff = [dmxidx,val,]
+        for k in 'DMXEP', 'DMXR1', 'DMXR2', 'DMXF1', 'DMXF2':
+            try:
+                stuff += [self.val('%s_%04d' % (k, dmxidx), float),]
+            except KeyError:
+                stuff += [None,]
+        return self._dmx_range(*stuff)
+
