@@ -795,3 +795,10 @@ class parfile(object):
                 stuff += [None,]
         return self._dmx_range(*stuff)
 
+    @property
+    def dmx_indices(self):
+        """Return a list of all dmx indices in the file."""
+        return sorted([int(k.split('_')[1])
+            for k in self.keys 
+            if k.startswith('DMX_')])
+
