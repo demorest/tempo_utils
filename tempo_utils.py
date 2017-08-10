@@ -488,12 +488,14 @@ def run_tempo(toas, parfile, show_output=False,
             phisun = None
         toa_resid_match(toas, resids, phisun)
         lis = open("tempo.lis",'r').readlines()
-        chi2_str = lis[-1][14:23]
+        idx1 = lis[-1].index(':')+1
+        idx2 = lis[-1].index('=')
+        chi2_str = lis[-1][idx1:idx2].split('/')
         try:
-            chi2 = float(chi2_str)
+            chi2 = float(chi2_str[0])
         except ValueError:
             chi2 = None
-        ndof = float(lis[-1][24:30])
+        ndof = float(chi2_str[1])
         rms_str = lis[-2][63:74]
         try:
             rms = float(rms_str)
