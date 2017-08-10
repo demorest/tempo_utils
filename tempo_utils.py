@@ -414,7 +414,7 @@ def toa_list_match(toas1, toas2, freq_tol=0.1, time_tol=0.001):
                 break
     return (out1, out2)
 
-def toa_resid_match(toas, resids):
+def toa_resid_match(toas, resids, phi=None):
     """Match a list of residuals to a list of TOAs.  The res entry for each
     TOA is filled in appropriately.  resids list is altered along the way.
     Current algorithm is fairly dumb.."""
@@ -429,11 +429,13 @@ def toa_resid_match(toas, resids):
         if not toa.is_toa():
             continue
         toa.res = resids.pop(0)
+        if phi is not None:
+            toa.res.phi = phi.pop(0)
 
 import os, tempfile
 def run_tempo(toas, parfile, show_output=False,
         get_output_par=False, gls=False, other_options=False,
-        quiet=False,dcovfile=False):
+        quiet=False, dcovfile=False, get_phisun=False):
     """Run tempo on the given TOA list using the given parfile.  Residuals
     are read and filled into the toa structs on successful completion."""
     orig_dir = os.getcwd()
@@ -465,6 +467,7 @@ def run_tempo(toas, parfile, show_output=False,
         write_toa_file("pulsar.toa", toalist(extra_cmds+toas))
         tempo_args = other_options if other_options else ""
         if gls: tempo_args += " -G"
+        if get_phisun: tempo_args += " -a"
         created_dcovfile = False
         if dcovfile:
             if os.path.exists(dcovfile): # See if dcovfile already exists
@@ -479,7 +482,11 @@ def run_tempo(toas, parfile, show_output=False,
             cmd += " > /dev/null"
         os.system(cmd)
         resids = read_resid2_file()
-        toa_resid_match(toas, resids)
+        if get_phisun: 
+            phisun = list(numpy.loadtxt('phisun.tmp'))
+        else:
+            phisun = None
+        toa_resid_match(toas, resids, phisun)
         lis = open("tempo.lis",'r').readlines()
         chi2_str = lis[-1][14:23]
         try:
@@ -699,7 +706,35 @@ class parfile(object):
             ['idx','val','ep','r1','r2','f1','f2'])
 
     def __init__(self, fname):
-        self.lines = open(fname,'r').readlines()
+        # Try it as a filename first
+        try:
+            self.lines = open(fname,'r').readlines()
+            return
+        except TypeError:
+            pass
+        # Try it as a file object next
+        try:
+            self.lines = fname.readlines()
+            return
+        except AttributeError:
+            pass
+        # Try it as another parfile object next (makes a copy)
+        try:
+            self.lines = list(fname.lines)
+            return
+        except:
+            pass
+        # Try it as a list of strings
+        # This one might need more error checking...
+        try:
+            self.lines = list(fname)
+        except:
+            raise TypeError("parfile can't be constructed from type '%s'" % 
+                    str(type(fname)))
+
+    def write(self, fname):
+        """Write out the par file to file fname."""
+        open(fname,'w').writelines(self.lines)
 
     @staticmethod
     def _is_comment(parline):
