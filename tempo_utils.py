@@ -787,6 +787,18 @@ class parfile(object):
         ltmp = string.join(vals,' ') + '\n'
         self.lines[idx] = ltmp
 
+    def remove(self,key):
+        """Remove this parameter from the parfile (delete line).  No error
+        is raised if the parameter is not present."""
+        try:
+            self.lines.pop(self._iline(key))
+        except KeyError:
+            pass
+
+    def add(self,line):
+        """Add the line to the parfile."""
+        self.lines += [line.rstrip() + '\n',]
+
     def no_fit(self):
         """Turn all fit params off.  Note, not fully general yet."""
         self.lines = [l.replace(' 1 ',' 0 ') for l in self.lines]
