@@ -746,6 +746,10 @@ class parfile(object):
             return False
 
     @staticmethod
+    def _is_blank(parline):
+        return re.match("^\s+$", parline)
+
+    @staticmethod
     def _fortran_float(strval):
         return float(strval.replace('D','e'))
 
@@ -753,7 +757,7 @@ class parfile(object):
     def keys(self):
         keys = []
         for l in self.lines:
-            if not self._is_comment(l):
+            if not self._is_comment(l) and not self._is_blank(l):
                 keys.append(l.split()[0])
         return keys
 
