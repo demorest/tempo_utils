@@ -7,6 +7,8 @@ import numpy
 import subprocess
 import tempfile
 
+_nobs = 30000
+
 def general2(parfile, timfile, params):
     """
     general2(parfile, timfile, params):
@@ -36,7 +38,7 @@ def general2(parfile, timfile, params):
         s_arg += " {%s}" % p
     s_arg += "\\n"
 
-    t2output = subprocess.check_output(["tempo2", "-nobs", "20000", 
+    t2output = subprocess.check_output(["tempo2", "-nobs", "%d"%_nobs, 
         "-output", "general2", 
         "-f", parfile, timfile, 
         "-s", s_arg])
@@ -63,7 +65,7 @@ def chi2(parfile,timfile):
     """
 
     id_str = 'ABCD'
-    t2output = subprocess.check_output(["tempo2", "-nobs", "20000", "-output", "general",
+    t2output = subprocess.check_output(["tempo2", "-nobs", "%d"%_nobs, "-output", "general",
         "-s", id_str+' ', "-f", parfile, timfile])
 
     goodlines = [x for x in t2output.split('\n') if x.startswith(id_str)]
@@ -82,7 +84,7 @@ def stats(parfile,timfile):
     """
 
     id_str = 'ABCD'
-    t2output = subprocess.check_output(["tempo2", "-nobs", "20000", "-output", "general",
+    t2output = subprocess.check_output(["tempo2", "-nobs", "%d"%_nobs, "-output", "general",
         "-s", id_str+' ', "-f", parfile, timfile])
 
     goodlines = [x for x in t2output.split('\n') if x.startswith(id_str)]
@@ -110,7 +112,7 @@ def newpar(parfile,timfile):
         open("%s/pulsar.par" % temp_dir, 'w').writelines(lines)
         timpath = os.path.abspath(timfile)
         os.chdir(temp_dir)
-        cmd = "tempo2 -nobs 30000 -newpar -f pulsar.par " + timpath
+        cmd = "tempo2 -nobs %d -newpar -f pulsar.par %s" % (_nobs, timpath)
         os.system(cmd + " > /dev/null")
         outparlines = open('new.par').readlines()
     finally:
