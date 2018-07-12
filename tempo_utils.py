@@ -185,7 +185,8 @@ class residual:
                     % (s1, s2)
         # Change units:
         self.res_us *= 1e6
-        self.prefit_us = self.res_us / self.res_phase * self.prefit_phase
+        self.prefit_us = (self.res_us / self.res_phase * self.prefit_phase 
+                if self.res_phase!=0.0 else 0.0)
 
 
 def read_resid2_file(filename="resid2.tmp"):
@@ -203,7 +204,7 @@ def read_resid2_file(filename="resid2.tmp"):
       resid.prefit_us     Prefit residual, us
       resid.ddm           DM correction from TOA line
     """
-    f = open(filename, "r")
+    f = open(filename, "rb")
     resids = []
     r = f.read(80)
     while len(r)==80:
@@ -215,7 +216,7 @@ def read_resid2_file(filename="resid2.tmp"):
 def read_design_matrix(filename='design.tmp'):
     """Reads a tempo 'design.tmp' file and returns the result as a
     numpy array, dims (ntoa,nparam)"""
-    f = open(filename, "r")
+    f = open(filename, "rb")
     # First record should be two ints giving array size
     (ntoa,nparam) = _unpack_record(f.read(16),'ii')
     result = numpy.zeros((ntoa,nparam+1))
@@ -707,6 +708,9 @@ class parfile(object):
     _dmx_range = namedtuple('dmx_range',
             ['idx','val','ep','r1','r2','f1','f2'])
 
+    # Regex for matching T2-style JUMPs
+    _jump_re = re.compile('(JUMP\s+\S+\s+\S+)\s')
+
     def __init__(self, fname):
         # Try it as a filename first
         try:
@@ -758,7 +762,11 @@ class parfile(object):
         keys = []
         for l in self.lines:
             if not self._is_comment(l) and not self._is_blank(l):
-                keys.append(l.split()[0])
+                jump = self._jump_re.match(l)
+                if jump:
+                    keys.append(jump.group(1))
+                else:
+                    keys.append(l.split()[0])
         return keys
 
     def _iline(self,key):
@@ -768,27 +776,39 @@ class parfile(object):
             if l.startswith(key+' '):
                 return i
 
-    def line(self, key):
+    def line(self, key, strip=False):
+        ltmp = self.lines[self._iline(key)]
+        if strip:
+            ltmp = ltmp.replace(key,'',1)
+            return ltmp.strip()
         return self.lines[self._iline(key)].rstrip()
 
     def val(self, key, dtype=str):
-        l = self.line(key)
+        l = self.line(key,strip=True)
         if dtype=='float' or dtype==float: 
             dtype_func = self._fortran_float
         else: 
             dtype_func = dtype
-        return dtype_func(l.split()[1])
+        return dtype_func(l.split()[0])
+
+    def err(self, key):
+        ltmp = self.line(key,strip=True)
+        vals = ltmp.split()
+        nval = len(vals)
+        if nval>=3:
+            return self._fortran_float(vals[2])
+        else:
+            return None
 
     def set_val(self,key,val):
         """Set a new value for this parameter."""
         # Not much checking of whether this is allowed for the given
         # param.  val should be a string
         idx = self._iline(key)
-        ltmp = self.lines[idx].rstrip()
+        ltmp = self.line(key,strip=True)
         vals = ltmp.split()
-        # Does not handle jumps yet
-        vals[1] = val
-        ltmp = string.join(vals,' ') + '\n'
+        vals[0] = val
+        ltmp = string.join([key,] + vals,' ') + '\n'
         self.lines[idx] = ltmp
 
     def remove(self,key):
@@ -809,15 +829,11 @@ class parfile(object):
 
     def is_fit(self,key):
         """Return whether a given param is being fit."""
-        idx = self._iline(key)
-        ltmp = self.lines[idx].rstrip()
+        ltmp = self.line(key,strip=True)
         vals = ltmp.split()
         nval = len(vals)
-        if nval>=3:
-            if vals[0]=='JUMP':
-                return vals[4]=='1'
-            else:
-                return vals[2]=='1'
+        if nval>=2:
+            return vals[1]=='1'
         return False
 
     def set_fit(self,key,fit=True):
@@ -827,14 +843,14 @@ class parfile(object):
         if fit and self.is_fit(key): return
         if not fit and not self.is_fit(key): return
         idx = self._iline(key)
-        ltmp = self.lines[idx].rstrip()
+        ltmp = self.line(key,strip=True)
         vals = ltmp.split()
-        nval = vals
-        if nval==2 and fit:
-            ltmp += ' 1\n'
-        elif nval>=3:
-            vals[2] = '1' if fit else '0'
-            ltmp = string.join(vals,' ') + '\n'
+        nval = len(vals)
+        if nval==1 and fit:
+            ltmp = string.join([key,]+vals+['1 \n',],' ')
+        elif nval>=2:
+            vals[1] = '1' if fit else '0'
+            ltmp = string.join([key,]+vals,' ') + '\n'
         self.lines[idx] = ltmp
 
     def dmx(self,dmxidx):
