@@ -436,7 +436,7 @@ def toa_resid_match(toas, resids, phi=None):
 import os, tempfile
 def run_tempo(toas, parfile, show_output=False,
         get_output_par=False, gls=False, other_options=False,
-        quiet=False, dcovfile=False, get_phisun=False):
+        quiet=False, dcovfile=False, get_phisun=False, inabspulsenum=False):
     """Run tempo on the given TOA list using the given parfile.  Residuals
     are read and filled into the toa structs on successful completion."""
     orig_dir = os.getcwd()
@@ -478,6 +478,12 @@ def run_tempo(toas, parfile, show_output=False,
             else: # dcovfile doesn't exist, so have tempo make it.
                 tempo_args += " -C"
                 created_dcovfile = True
+        if inabspulsenum:
+            if os.path.exists(inabspulsenum):
+                shutil.copy(inabsphase,os.path.basename(inabspulsenum))
+                tempo_args += " -ni " + os.path.basename(inabspulsenum)
+            else:
+                print inabspulsenum," does not exist"
         cmd = "tempo " + tempo_args + " -f pulsar.par pulsar.toa"
         if show_output==False:
             cmd += " > /dev/null"
