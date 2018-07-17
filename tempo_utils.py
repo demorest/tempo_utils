@@ -480,7 +480,7 @@ def run_tempo(toas, parfile, show_output=False,
                 created_dcovfile = True
         if inabspulsenum:
             if os.path.exists(inabspulsenum):
-                shutil.copy(inabsphase,os.path.basename(inabspulsenum))
+                shutil.copy(inabspulsenum,os.path.basename(inabspulsenum))
                 tempo_args += " -ni " + os.path.basename(inabspulsenum)
             else:
                 print inabspulsenum," does not exist"
