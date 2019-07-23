@@ -436,7 +436,8 @@ def toa_resid_match(toas, resids, phi=None):
 import os, tempfile
 def run_tempo(toas, parfile, show_output=False,
         get_output_par=False, gls=False, other_options=False,
-        quiet=False, dcovfile=False, get_phisun=False, inabspulsenum=False):
+        quiet=False, dcovfile=False, get_phisun=False, inabspulsenum=False,
+        matrixfile=False):
     """Run tempo on the given TOA list using the given parfile.  Residuals
     are read and filled into the toa structs on successful completion."""
     orig_dir = os.getcwd()
@@ -516,6 +517,8 @@ def run_tempo(toas, parfile, show_output=False,
                 outparlines = None
         if created_dcovfile:
             os.rename("datacov.tmp",dcovfile)
+        if matrixfile:
+            shutil.copy("matrix.tmp",os.path.join(orig_dir,matrixfile))
     finally:
         os.chdir(orig_dir)
     os.system("rm -rf %s" % temp_dir)
