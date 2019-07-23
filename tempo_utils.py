@@ -748,6 +748,22 @@ class parfile(object):
         """Write out the par file to file fname."""
         open(fname,'w').writelines(self.lines)
 
+    def run_fit(self, toas, gls=None):
+        """Run tempo using the parfile and TOAs, return results as a new 
+        parfile instance."""
+        if gls is None:
+            if 'ECORR' in self.keys or 'RNAMP' in self.keys:
+                gls = True
+            else:
+                gls = False
+        chi2, dof, rms, lines = run_tempo(toas, self.lines, 
+                get_output_par=True, gls=gls)
+        result = parfile(lines)
+        result.chi2 = chi2
+        result.dof = dof
+        result.rms = rms
+        return result
+
     @staticmethod
     def _is_comment(parline):
         if parline.startswith('#') or parline.startswith('C '):
