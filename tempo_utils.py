@@ -542,6 +542,17 @@ class polycos(list):
                 more = False
 
     @classmethod
+    def generate_from_polyco(cls, parfile, polyco0):
+        """Generate a polyco set with the same parameters as an existing
+        single polyco instance (polyco0)."""
+        return cls.generate(parfile, 
+                polyco0.site,
+                polyco0.imjd + polyco0.fmjd - polyco0.span/2.0/1440.0,
+                polyco0.span/1440.0, 
+                polyco0.ncoeff,
+                polyco0.obsfreq)
+
+    @classmethod
     def generate(cls, parfile, site, mjd_start, tobs, 
             ncoeff=15, freq=1420.0, outfile=None):
         """Generate a polyco set from parfile.  If outfile is not none,
