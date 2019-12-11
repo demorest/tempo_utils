@@ -699,7 +699,7 @@ class polyco:
             for c in self.coeffs[i:i+3]:
                 cline += ('%25.17E' % c).replace('E','D')
             lines += [cline,]
-        return string.join(lines,'\n') + '\n'
+        return '\n'.join(lines) + '\n'
 
     def phase_and_freq(self,mjd,fmjd=0.0):
         dt_min = (float(mjd - self.imjd) + (fmjd - self.fmjd))*1440.0
@@ -844,7 +844,7 @@ class parfile(object):
         ltmp = self.line(key,strip=True)
         vals = ltmp.split()
         vals[0] = val
-        ltmp = string.join([key,] + vals,' ') + '\n'
+        ltmp = ' '.join([key,] + vals) + '\n'
         self.lines[idx] = ltmp
 
     def remove(self,key):
@@ -883,10 +883,10 @@ class parfile(object):
         vals = ltmp.split()
         nval = len(vals)
         if nval==1 and fit:
-            ltmp = string.join([key,]+vals+['1 \n',],' ')
+            ltmp = ' '.join([key,]+vals+['1 \n',])
         elif nval>=2:
             vals[1] = '1' if fit else '0'
-            ltmp = string.join([key,]+vals,' ') + '\n'
+            ltmp = ' '.join([key,]+vals) + '\n'
         self.lines[idx] = ltmp
 
     def dmx(self,dmxidx):
