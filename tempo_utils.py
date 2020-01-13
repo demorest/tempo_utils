@@ -106,8 +106,8 @@ class toa:
             for i in range(0,len(fields),2):
                 self.flags[fields[i].lstrip('-')] = fields[i+1]
         elif self.format=="ITOA":
-            raise RuntimeError, \
-                "TOA format '%s' not implemented yet" % self.format
+            raise RuntimeError( 
+                    "TOA format '%s' not implemented yet" % self.format)
 
     def is_toa(self):
         """Return True if this is a valid TOA (ie not command/comment/etc)"""
@@ -150,9 +150,9 @@ def _unpack_record(raw,fmt=None):
         fmt = 'd' * (dlen/8)
     ss = struct.unpack('=i'+fmt+'i',raw)
     if ss[0]!=dlen or ss[-1]!=dlen:
-        raise RuntimeError,\
+        raise RuntimeError( 
                 "Record length does not match (s1=%d s2=%d len=%d)" % (ss[0],
-                        ss[-1], dlen)
+                        ss[-1], dlen))
     return ss[1:-1]
 
 class residual:
@@ -178,14 +178,14 @@ class residual:
 
     def parse_raw(self,raw):
         if len(raw) != 80:
-            raise RuntimeError, "Invalid raw residual block (len=%d)" \
-                    % len(raw)
+            raise RuntimeError("Invalid raw residual block (len=%d)" 
+                    % len(raw))
         (s1, self.mjd_bary, self.res_phase, self.res_us, self.ophase,
                 self.rf_bary, self.weight, self.err_us, self.prefit_phase,
                 self.ddm, s2) = struct.unpack("=idddddddddi", raw)
         if s1 != 72 or s2 != 72:
-            raise RuntimeError, "Error parsing residual block (s1=%d s2=%d)" \
-                    % (s1, s2)
+            raise RuntimeError("Error parsing residual block (s1=%d s2=%d)" 
+                    % (s1, s2))
         # Change units:
         self.res_us *= 1e6
         self.prefit_us = (self.res_us / self.res_phase * self.prefit_phase 
@@ -427,8 +427,8 @@ def toa_resid_match(toas, resids, phi=None):
         if toa.is_toa():
             toa_count += 1
     if toa_count != len(resids):
-        raise RuntimeError, "TOA count (%d) != residual count (%d)" \
-                % (toa_count, len(resids))
+        raise RuntimeError("TOA count (%d) != residual count (%d)" 
+                % (toa_count, len(resids)))
     for toa in toas:
         if not toa.is_toa():
             continue
@@ -461,13 +461,13 @@ def run_tempo(toas, parfile, show_output=False,
         # Always add mode 1 if it's not there
         if not any([t.command=='MODE' for t in toas]):
             if not quiet:
-                print "tempo_utils.run_tempo: Adding 'MODE 1'"
+                print("tempo_utils.run_tempo: Adding 'MODE 1'")
             extra_cmds.insert(0,toa('MODE 1'))
         # Check if there are tempo2 TOAs but no FORMAT line
         if any([t.format=='Tempo2' for t in toas]) \
                 and not any([t.command=='FORMAT' for t in toas]):
             if not quiet:
-                print "tempo_utils.run_tempo: Adding 'FORMAT 1'"
+                print("tempo_utils.run_tempo: Adding 'FORMAT 1'")
             extra_cmds.insert(0,toa('FORMAT 1'))
         write_toa_file("pulsar.toa", toalist(extra_cmds+toas))
         tempo_args = other_options if other_options else ""
@@ -487,7 +487,7 @@ def run_tempo(toas, parfile, show_output=False,
                 shutil.copy(inabspulsenum,os.path.basename(inabspulsenum))
                 tempo_args += " -ni " + os.path.basename(inabspulsenum)
             else:
-                print inabspulsenum," does not exist"
+                print(inabspulsenum," does not exist")
         cmd = "tempo " + tempo_args + " -f pulsar.par pulsar.toa"
         if show_output==False:
             cmd += " > /dev/null"
@@ -702,7 +702,7 @@ class polyco:
             for c in self.coeffs[i:i+3]:
                 cline += ('%25.17E' % c).replace('E','D')
             lines += [cline,]
-        return string.join(lines,'\n') + '\n'
+        return '\n'.join(lines) + '\n'
 
     def phase_and_freq(self,mjd,fmjd=0.0):
         dt_min = (float(mjd - self.imjd) + (fmjd - self.fmjd))*1440.0
@@ -850,7 +850,7 @@ class parfile(object):
         ltmp = self.line(key,strip=True)
         vals = ltmp.split()
         vals[0] = val
-        ltmp = string.join([key,] + vals,' ') + '\n'
+        ltmp = ' '.join([key,] + vals) + '\n'
         self.lines[idx] = ltmp
 
     def remove(self,key):
@@ -889,10 +889,10 @@ class parfile(object):
         vals = ltmp.split()
         nval = len(vals)
         if nval==1 and fit:
-            ltmp = string.join([key,]+vals+['1 \n',],' ')
+            ltmp = ' '.join([key,]+vals+['1 \n',])
         elif nval>=2:
             vals[1] = '1' if fit else '0'
-            ltmp = string.join([key,]+vals,' ') + '\n'
+            ltmp = ' '.join([key,]+vals) + '\n'
         self.lines[idx] = ltmp
 
     def dmx(self,dmxidx):
