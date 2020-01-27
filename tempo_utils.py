@@ -11,6 +11,9 @@ toa_commands = ("DITHER", "EFAC", "EMAX", "EMAP", "EMIN", "EQUAD", "FMAX",
         "PHASE", "SEARCH", "SIGMA", "SIM", "SKIP", "TIME", "TRACK", "ZAWGT",
         "FORMAT", "EFLOOR")
 
+T2_style_keys = ("JUMP", "T2EFAC", "T2EQUAD", "ECORR", "EFAC", "EQUAD",
+        "DMEFAC", "DMJUMP")
+
 def toa_format(line):
     """Identifies a TOA line as one of the following types:  Comment, Command,
     Blank, Tempo2, Princeton, ITOA, Parkes, Unknown."""
@@ -728,8 +731,8 @@ class parfile(object):
     _dmx_range = namedtuple('dmx_range',
             ['idx','val','ep','r1','r2','f1','f2'])
 
-    # Regex for matching T2-style JUMPs
-    _jump_re = re.compile('(JUMP\s+\S+\s+\S+)\s')
+    # Regex for matching T2-style JUMPs and other keys
+    _key_re = lambda self,x: re.compile('(%s\s+\S+\s+\S+)\s'%x)
 
     def __init__(self, fname):
         # Try it as a filename first
@@ -798,11 +801,14 @@ class parfile(object):
         keys = []
         for l in self.lines:
             if not self._is_comment(l) and not self._is_blank(l):
-                jump = self._jump_re.match(l)
-                if jump:
-                    keys.append(jump.group(1))
-                else:
-                    keys.append(l.split()[0])
+                for key in T2_style_keys:
+                    key = self._key_re(key).match(l)
+                    if key:
+                        keys.append(key.group(1))
+                        break
+                    else:
+                        continue
+                if not key: keys.append(l.split()[0])
         return keys
 
     def _iline(self,key):
