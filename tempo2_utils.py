@@ -43,7 +43,7 @@ def general2(parfile, timfile, params):
         "-f", parfile, timfile, 
         "-s", s_arg])
 
-    goodlines = [x for x in t2output.split('\n') if x.startswith(id_str)]
+    goodlines = [x for x in t2output.decode("utf8").split('\n') if x.startswith(id_str)]
     nline = len(goodlines)
 
     result = {}
