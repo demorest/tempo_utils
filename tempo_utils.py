@@ -15,7 +15,7 @@ def toa_format(line):
     """Identifies a TOA line as one of the following types:  Comment, Command,
     Blank, Tempo2, Princeton, ITOA, Parkes, Unknown."""
     try:
-        if line[0]=='C' or line[0]=='#':
+        if line.startswith('C ') or line[0]=='#':
             return "Comment"
         elif line.startswith(toa_commands):
             return "Command"
