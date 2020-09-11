@@ -12,7 +12,7 @@ toa_commands = ("DITHER", "EFAC", "EMAX", "EMAP", "EMIN", "EQUAD", "FMAX",
         "FORMAT", "EFLOOR")
 
 T2_style_keys = ("JUMP", "T2EFAC", "T2EQUAD", "ECORR", "EFAC", "EQUAD",
-        "DMEFAC", "DMJUMP")
+        "DMEFAC", "DMEQUAD", "DMJUMP")
 
 def toa_format(line):
     """Identifies a TOA line as one of the following types:  Comment, Command,
