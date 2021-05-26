@@ -670,7 +670,7 @@ class polyco:
         coeff_str = ''
         for i in range(nclines):
             coeff_str += fin.readline().strip() + ' '
-        self.coeffs = map(float,coeff_str.replace('D','e').split())
+        self.coeffs = list(map(float,coeff_str.replace('D','e').split()))
 
     def as_string(self):
         # Return the info formatted as a polyco block
