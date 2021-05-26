@@ -147,7 +147,7 @@ class toa:
 def _unpack_record(raw,fmt=None):
     dlen = len(raw) - 8
     if fmt is None:
-        fmt = 'd' * (dlen/8)
+        fmt = 'd' * (dlen//8)
     ss = struct.unpack('=i'+fmt+'i',raw)
     if ss[0]!=dlen or ss[-1]!=dlen:
         raise RuntimeError( 
@@ -664,7 +664,7 @@ class polyco:
             self.ophase = float(line2[6])
         except IndexError:
             self.ophase = None
-        nclines = self.ncoeff / 3
+        nclines = self.ncoeff // 3
         if self.ncoeff % 3:
             nclines += 1
         coeff_str = ''
